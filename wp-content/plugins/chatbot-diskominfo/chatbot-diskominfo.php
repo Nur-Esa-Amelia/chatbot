@@ -150,6 +150,8 @@ function chatbot_script() {
 ?>
 
 <script>
+let chatboxFirstTime = true;
+
 function toggleChat() { 
 
     let chatbox =
@@ -161,7 +163,20 @@ function toggleChat() {
 
     } else {
 
-        chatbox.style.display = "flex"; 
+        chatbox.style.display = "flex";
+        
+        // Tampilkan greeting message saat pertama kali dibuka
+        if(chatboxFirstTime) {
+            const chatOutput = document.getElementById("chat-output");
+            chatOutput.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; padding: 30px 20px; gap: 15px;">
+                    <h3 style="font-size: 24px; font-weight: 600; margin: 0; color: #333; text-align: center;">Halo 👋</h3>
+                    <p style="font-size: 14px; color: #666; margin: 0; text-align: center;">Ada yang bisa saya bantu?</p>
+                </div>
+            `;
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+            chatboxFirstTime = false;
+        }
     }
 }
 
