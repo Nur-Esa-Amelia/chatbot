@@ -56,7 +56,10 @@ function chatbot_ui() {
 <div id="chatbot-container">
 
     <div id="chatbot-header">
-        Chat Diskominfo
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span>CaMi</span>
+            <button id="close-chat-btn" onclick="toggleChat()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer; padding:0; width:25px; height:25px; display:flex; align-items:center; justify-content:center;">&times;</button>
+        </div>
     </div>
 
     <div id="chat-output"></div>
@@ -65,7 +68,8 @@ function chatbot_ui() {
 
         <input type="text"
                id="chat-input"
-               placeholder="Tulis pesan...">
+               placeholder="Tulis pesan..."
+               onkeypress="if(event.key==='Enter')sendMessage()">
 
         <button onclick="sendMessage()">
             Kirim
@@ -165,10 +169,22 @@ function sendMessage() {
 
     let message = document.getElementById("chat-input").value; 
 
+    if (!message.trim()) return;
+
     let formData = new FormData(); 
 
     formData.append("action", "chatbot_response"); 
     formData.append("message", message); 
+
+    document.getElementById("chat-output").innerHTML += 
+    "<div class='message-user'><p>" + message + "</p></div>"; 
+
+    document.getElementById("chat-input").value = "";
+
+    document.getElementById("chat-output").innerHTML += 
+    "<div class='message-bot loading-bubble'><span></span><span></span><span></span></div>";
+
+    document.getElementById("chat-output").scrollTop = document.getElementById("chat-output").scrollHeight;
 
     fetch("<?php echo admin_url('admin-ajax.php'); ?>", { 
 
@@ -181,11 +197,13 @@ function sendMessage() {
 
     .then(data => { 
 
-        document.getElementById("chat-output").innerHTML += 
-        "<p><b>Anda:</b> " + message + "</p>"; 
+        let loadingBubble = document.querySelector(".loading-bubble");
+        loadingBubble.remove();
 
         document.getElementById("chat-output").innerHTML += 
-        "<p><b>Bot:</b> " + data + "</p>"; 
+        "<div class='message-bot'><p>" + data + "</p></div>"; 
+
+        document.getElementById("chat-output").scrollTop = document.getElementById("chat-output").scrollHeight;
 
     });
 }
@@ -319,6 +337,109 @@ function chatbot_style() {
     padding:10px 30px;
 
     cursor:pointer;
+}
+
+/* ========================= */
+
+.message-user {
+
+    text-align: right;
+
+    margin: 8px 0;
+}
+
+.message-user p {
+
+    background: #0073aa;
+
+    color: white;
+
+    padding: 10px 15px;
+
+    border-radius: 15px;
+
+    display: inline-block;
+
+    max-width: 80%;
+
+    word-wrap: break-word;
+
+    margin: 0;
+}
+
+/* ========================= */
+
+.message-bot {
+
+    text-align: left;
+
+    margin: 8px 0;
+}
+
+.message-bot p {
+
+    background: #e0e0e0;
+
+    color: #333;
+
+    padding: 10px 15px;
+
+    border-radius: 15px;
+
+    display: inline-block;
+
+    max-width: 80%;
+
+    word-wrap: break-word;
+
+    margin: 0;
+}
+
+/* ========================= */
+
+.loading-bubble {
+
+    display: flex !important;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
+.loading-bubble span {
+
+    width: 8px;
+
+    height: 8px;
+
+    background: #bbb;
+
+    border-radius: 50%;
+
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-bubble span:nth-child(2) {
+
+    animation-delay: 0.2s;
+}
+
+.loading-bubble span:nth-child(3) {
+
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 </style>
 
