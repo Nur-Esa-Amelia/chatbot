@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Chatbot Diskominfo
+Plugin Name: Chatbot Diskominfo yaw
 Description: Chatbot informasi website Diskominfo
 Version: 1.0
 Author: Amelia
@@ -80,10 +80,10 @@ function chatbot_ui() {
 </div>
 
 <?php
-    return ob_get_clean(); 
+    echo ob_get_clean(); 
 }
 
-add_shortcode('chatbot_diskominfo', 'chatbot_ui'); 
+add_action('wp_footer', 'chatbot_ui');
 
 /*
 |--------------------------------------------------------------------------
