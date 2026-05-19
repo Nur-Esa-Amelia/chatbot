@@ -49,7 +49,17 @@ function chatbot_ui() {
 
 <!-- Tombol Chat -->
 <div id="chatbot-button" onclick="toggleChat()"> 
-    💬
+<svg width="43" height="50" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M64 16C37.49 16 16 34.8 16 58C16 71.5 23.4 83.5 35.2 91.2L30 112L51.6 100.4C55.6 101.4 59.7 102 64 102C90.51 102 112 83.2 112 60C112 36.8 90.51 16 64 16Z"
+    fill="#024e9e"
+  />
+
+  <!-- Three gray dots -->
+  <circle cx="46" cy="60" r="6" fill="#BDBDBD"/>
+  <circle cx="64" cy="60" r="6" fill="#BDBDBD"/>
+  <circle cx="82" cy="60" r="6" fill="#BDBDBD"/>
+</svg>
 </div>
 
 <!-- Popup Chat -->
@@ -250,7 +260,7 @@ function chatbot_style() {
     width:60px; 
     height:60px; 
 
-    background:#0073aa; 
+    background:#e2e3e8; 
     color:white; 
 
     border-radius:50%; 
