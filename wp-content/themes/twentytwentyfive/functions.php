@@ -163,7 +163,7 @@ function suara_hover_teks() {
 <style> 
 #voice-btn { 
     position: fixed; 
-    bottom: 15px; right: 15px; 
+    bottom: 35px; right: 100px; 
     width: 50px; height: 50px; 
     border-radius: 50%;   
     background:  #e2e3e8; 
@@ -182,6 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const btn = document.createElement("div"); 
     btn.id = "voice-btn"; 
+	btn.title="Text-to-Speech"
     btn.innerHTML = icon("pause"); 
     document.body.appendChild(btn); 
 
