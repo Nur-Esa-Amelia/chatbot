@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) exit;
 
 /*
 |--------------------------------------------------------------------------
-| BUAT TABEL FAQ OTOMATIS
+| BUAT TABEL FAQ DAN PENGADUAN OTOMATIS
 |--------------------------------------------------------------------------
 */
 
@@ -20,27 +20,186 @@ function chatbot_create_table() {
 
     global $wpdb;
 
-    $table_name = $wpdb->prefix . 'chatbot_faq';
-
     $charset_collate = $wpdb->get_charset_collate();
 
-    $sql = "CREATE TABLE $table_name (
+    // Tabel FAQ
+    $table_faq = $wpdb->prefix . 'chatbot_faq';
+    $sql_faq = "CREATE TABLE $table_faq (
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         keyword varchar(255) NOT NULL,
         jawaban text NOT NULL,
         PRIMARY KEY (id)
     ) $charset_collate;";
 
+    // Tabel Pengaduan
+    $table_pengaduan = $wpdb->prefix . 'pengaduan';
+    $sql_pengaduan = "CREATE TABLE $table_pengaduan (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        keluhan text NOT NULL,
+        email_pelapor varchar(255) NOT NULL,
+        jawaban_admin text,
+        status varchar(20) DEFAULT 'pending',
+        tanggal_buat datetime DEFAULT CURRENT_TIMESTAMP,
+        tanggal_update datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+    ) $charset_collate;";
+
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-    dbDelta($sql);
+    dbDelta($sql_faq);
+    dbDelta($sql_pengaduan);
 }
 
 /*
 |--------------------------------------------------------------------------
-| SHORTCODE CHATBOT
+| ADMIN MENU DAN HALAMAN KELOLA PENGADUAN
 |--------------------------------------------------------------------------
 */
+
+add_action('admin_menu', 'chatbot_add_admin_menu');
+
+function chatbot_add_admin_menu() {
+    add_menu_page(
+        'Kelola Pengaduan',
+        'Pengaduan Chatbot',
+        'manage_options',
+        'chatbot-pengaduan',
+        'chatbot_pengaduan_page',
+        'dashicons-feedback',
+        6
+    );
+}
+
+function chatbot_pengaduan_page() {
+    global $wpdb;
+    
+    // Proses update jawaban
+    if (isset($_POST['action']) && $_POST['action'] === 'update_pengaduan' && isset($_POST['pengaduan_id'])) {
+        check_admin_referer('chatbot_update_pengaduan');
+        
+        $id = intval($_POST['pengaduan_id']);
+        $jawaban = sanitize_textarea_field($_POST['jawaban_admin']);
+        $status = sanitize_text_field($_POST['status']);
+        $email = sanitize_email($_POST['email']);
+        
+        $table = $wpdb->prefix . 'pengaduan';
+        $wpdb->update($table, array(
+            'jawaban_admin' => $jawaban,
+            'status' => $status
+        ), array('id' => $id));
+        
+        // Kirim email ke pelapor
+        $subject = 'Balasan Pengaduan Anda - Diskominfo';
+        $message = "Halo,\n\nTerimakasih telah melaporkan keluhan kepada kami. Berikut adalah tanggapan kami:\n\n" . $jawaban . "\n\nTerima kasih telah menjadi bagian dari komunitas kami.\n\nBest Regards,\nDiskominfo";
+        wp_mail($email, $subject, $message);
+        
+        echo '<div class="notice notice-success"><p>Pengaduan berhasil diperbarui dan email telah dikirim ke pelapor!</p></div>';
+    }
+    
+    ?>
+    <div class="wrap">
+        <h1>Kelola Pengaduan Chatbot</h1>
+        
+        <?php
+        $table = $wpdb->prefix . 'pengaduan';
+        $pengaduans = $wpdb->get_results("SELECT * FROM $table ORDER BY tanggal_buat DESC");
+        
+        if (empty($pengaduans)) {
+            echo '<p>Tidak ada pengaduan masuk.</p>';
+        } else {
+            ?>
+            <table class="widefat striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email Pelapor</th>
+                        <th>Keluhan</th>
+                        <th>Status</th>
+                        <th>Tanggal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($pengaduans as $pengaduan): ?>
+                    <tr>
+                        <td><?php echo $pengaduan->id; ?></td>
+                        <td><?php echo esc_html($pengaduan->email_pelapor); ?></td>
+                        <td><?php echo wp_kses_post(wp_trim_words($pengaduan->keluhan, 20)); ?></td>
+                        <td>
+                            <span class="status-badge" style="padding: 5px 10px; border-radius: 5px; background: <?php echo $pengaduan->status === 'selesai' ? '#90EE90' : '#FFD700'; ?>; color: #333;">
+                                <?php echo esc_html(ucfirst($pengaduan->status)); ?>
+                            </span>
+                        </td>
+                        <td><?php echo date('d M Y H:i', strtotime($pengaduan->tanggal_buat)); ?></td>
+                        <td>
+                            <button class="button" onclick="editPengaduan(<?php echo $pengaduan->id; ?>)">Edit & Balas</button>
+                        </td>
+                    </tr>
+                    
+                    <!-- Modal Edit -->
+                    <tr id="modal-<?php echo $pengaduan->id; ?>" style="display: none;">
+                        <td colspan="6">
+                            <div style="padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
+                                <h3>Detail Pengaduan</h3>
+                                <form method="post">
+                                    <?php wp_nonce_field('chatbot_update_pengaduan'); ?>
+                                    <input type="hidden" name="action" value="update_pengaduan">
+                                    <input type="hidden" name="pengaduan_id" value="<?php echo $pengaduan->id; ?>">
+                                    <input type="hidden" name="email" value="<?php echo esc_attr($pengaduan->email_pelapor); ?>">
+                                    
+                                    <div style="margin-bottom: 15px;">
+                                        <label><strong>Email Pelapor:</strong></label>
+                                        <p><?php echo esc_html($pengaduan->email_pelapor); ?></p>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 15px;">
+                                        <label><strong>Keluhan:</strong></label>
+                                        <p style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: white;">
+                                            <?php echo esc_html($pengaduan->keluhan); ?>
+                                        </p>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 15px;">
+                                        <label for="jawaban-<?php echo $pengaduan->id; ?>"><strong>Jawaban Admin:</strong></label>
+                                        <textarea name="jawaban_admin" id="jawaban-<?php echo $pengaduan->id; ?>" rows="5" class="widefat" required><?php echo esc_textarea($pengaduan->jawaban_admin); ?></textarea>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 15px;">
+                                        <label for="status-<?php echo $pengaduan->id; ?>"><strong>Status:</strong></label>
+                                        <select name="status" id="status-<?php echo $pengaduan->id; ?>" class="widefat">
+                                            <option value="pending" <?php selected($pengaduan->status, 'pending'); ?>>Pending</option>
+                                            <option value="selesai" <?php selected($pengaduan->status, 'selesai'); ?>>Selesai</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <button type="submit" class="button button-primary">Simpan & Kirim Email</button>
+                                        <button type="button" class="button" onclick="editPengaduan(<?php echo $pengaduan->id; ?>)">Batal</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php
+        }
+        ?>
+    </div>
+    
+    <script>
+    function editPengaduan(id) {
+        const modal = document.getElementById('modal-' + id);
+        if (modal.style.display === 'none') {
+            modal.style.display = 'table-row';
+        } else {
+            modal.style.display = 'none';
+        }
+    }
+    </script>
+    <?php
+}
 
 function chatbot_ui() { 
 
@@ -188,7 +347,45 @@ add_action('wp_footer', 'chatbot_ui');
 */
 
 add_action('wp_ajax_chatbot_response', 'chatbot_response'); 
-add_action('wp_ajax_nopriv_chatbot_response', 'chatbot_response'); 
+add_action('wp_ajax_nopriv_chatbot_response', 'chatbot_response');
+
+add_action('wp_ajax_chatbot_save_complaint', 'chatbot_save_complaint');
+add_action('wp_ajax_nopriv_chatbot_save_complaint', 'chatbot_save_complaint');
+
+function chatbot_save_complaint() {
+
+    global $wpdb;
+
+    if (!isset($_POST['keluhan']) || !isset($_POST['email']) || empty($_POST['keluhan']) || empty($_POST['email'])) {
+        wp_send_json_error('Keluhan dan email harus diisi.');
+        wp_die();
+    }
+
+    $keluhan = sanitize_textarea_field($_POST['keluhan']);
+    $email = sanitize_email($_POST['email']);
+
+    // Validasi email
+    if (!is_email($email)) {
+        wp_send_json_error('Email tidak valid.');
+        wp_die();
+    }
+
+    $table = $wpdb->prefix . 'pengaduan';
+
+    $result = $wpdb->insert($table, array(
+        'keluhan' => $keluhan,
+        'email_pelapor' => $email,
+        'status' => 'pending'
+    ));
+
+    if ($result) {
+        wp_send_json_success('Pengaduan berhasil dikirim. Admin akan menghubungi Anda melalui email.');
+    } else {
+        wp_send_json_error('Gagal menyimpan pengaduan.');
+    }
+
+    wp_die();
+}
 
 function chatbot_response() {
 
@@ -247,11 +444,16 @@ function chatbot_script() {
 
 <script>
 let chatboxFirstTime = true;
+let chatbotMode = null; // 'pertanyaan' atau 'pengaduan'
+let complaintStep = 0; // 0 = idle, 1 = menunggu keluhan, 2 = menunggu email
+let complaintData = {
+    keluhan: '',
+    email: ''
+};
 
 function toggleChat() { 
 
-    let chatbox =
-        document.getElementById("chatbot-container"); 
+    let chatbox = document.getElementById("chatbot-container"); 
 
     if(chatbox.style.display === "flex") { 
 
@@ -261,7 +463,7 @@ function toggleChat() {
 
         chatbox.style.display = "flex";
         
-        // Tampilkan greeting message saat pertama kali dibuka
+        // Tampilkan greeting message dan 2 pilihan saat pertama kali dibuka
         if(chatboxFirstTime) {
             const chatOutput = document.getElementById("chat-output");
             chatOutput.innerHTML = `
@@ -276,6 +478,10 @@ function toggleChat() {
                         </svg>
                     </div>
                     <p style="font-size: 14px; color: #666; margin: 0; text-align: center;">Ada yang bisa Cami bantu?</p>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; width: 100%;">
+                        <button onclick="selectMode('pertanyaan')" style="flex: 1; padding: 10px; background: #0073aa; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">❓ Pertanyaan</button>
+                        <button onclick="selectMode('pengaduan')" style="flex: 1; padding: 10px; background: #ff6b6b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">📢 Pengaduan</button>
+                    </div>
                 </div>
             `;
             chatOutput.scrollTop = chatOutput.scrollHeight;
@@ -284,47 +490,140 @@ function toggleChat() {
     }
 }
 
+function selectMode(mode) {
+    chatbotMode = mode;
+    const chatOutput = document.getElementById("chat-output");
+    
+    if (mode === 'pertanyaan') {
+        // Mode pertanyaan - tampilkan input biasa
+        const chatInput = document.getElementById("chat-input");
+        chatInput.style.display = 'block';
+        chatInput.placeholder = 'Tulis pertanyaan Anda...';
+        chatOutput.innerHTML = '<div class="message-bot"><p>Silakan tanyakan apa yang ingin Anda ketahui tentang informasi kami!</p></div>';
+    } else if (mode === 'pengaduan') {
+        // Mode pengaduan - mulai flow dengan pertanyaan keluhan
+        complaintStep = 1;
+        chatOutput.innerHTML = '<div class="message-bot"><p>Kami siap mendengarkan keluhan Anda. Silakan jelaskan masalah atau keluhan Anda secara detail:</p></div>';
+        const chatInput = document.getElementById("chat-input");
+        chatInput.style.display = 'block';
+        chatInput.placeholder = 'Tuliskan keluhan Anda di sini...';
+        chatInput.focus();
+    }
+    
+    chatOutput.scrollTop = chatOutput.scrollHeight;
+}
+
 function sendMessage() { 
 
     let message = document.getElementById("chat-input").value; 
 
     if (!message.trim()) return;
 
-    let formData = new FormData(); 
-
-    formData.append("action", "chatbot_response"); 
-    formData.append("message", message); 
-
-    document.getElementById("chat-output").innerHTML += 
-    "<div class='message-user'><p>" + message + "</p></div>"; 
+    let chatOutput = document.getElementById("chat-output");
+    
+    // Tampilkan pesan user
+    chatOutput.innerHTML += '<div class="message-user"><p>' + escapeHtml(message) + '</p></div>'; 
 
     document.getElementById("chat-input").value = "";
+    chatOutput.scrollTop = chatOutput.scrollHeight;
 
-    document.getElementById("chat-output").innerHTML += 
-    "<div class='message-bot loading-bubble'><span></span><span></span><span></span></div>";
+    // Handle pengaduan flow
+    if (chatbotMode === 'pengaduan') {
+        if (complaintStep === 1) {
+            // Simpan keluhan
+            complaintData.keluhan = message;
+            complaintStep = 2;
+            
+            // Tampilkan pertanyaan kedua - email
+            chatOutput.innerHTML += '<div class="message-bot"><p>Terima kasih. Sekarang silakan masukkan email Anda agar kami bisa menghubungi Anda kembali:</p></div>';
+            document.getElementById("chat-input").placeholder = 'Masukkan email Anda...';
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+            return;
+        } else if (complaintStep === 2) {
+            // Simpan email dan kirim pengaduan
+            complaintData.email = message;
+            
+            // Tampilkan loading
+            chatOutput.innerHTML += '<div class="message-bot loading-bubble"><span></span><span></span><span></span></div>';
+            chatOutput.scrollTop = chatOutput.scrollHeight;
 
-    document.getElementById("chat-output").scrollTop = document.getElementById("chat-output").scrollHeight;
+            // Send ke AJAX
+            let formData = new FormData();
+            formData.append("action", "chatbot_save_complaint");
+            formData.append("keluhan", complaintData.keluhan);
+            formData.append("email", complaintData.email);
 
-    fetch("<?php echo admin_url('admin-ajax.php'); ?>", { 
+            fetch("<?php echo admin_url('admin-ajax.php'); ?>", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                let loadingBubble = document.querySelector(".loading-bubble");
+                if (loadingBubble) loadingBubble.remove();
 
-        method: "POST", 
-        body: formData 
+                if (data.success) {
+                    chatOutput.innerHTML += '<div class="message-bot"><p style="background: #90EE90; color: #333;">' + data.data + '</p></div>';
+                } else {
+                    chatOutput.innerHTML += '<div class="message-bot"><p style="background: #FFB6C6; color: #333;">❌ ' + data.data + '</p></div>';
+                }
+                
+                complaintStep = 0;
+                chatbotMode = null;
+                document.getElementById("chat-input").placeholder = 'Tulis pesan...';
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+            })
+            .catch(error => {
+                let loadingBubble = document.querySelector(".loading-bubble");
+                if (loadingBubble) loadingBubble.remove();
+                chatOutput.innerHTML += '<div class="message-bot"><p style="background: #FFB6C6; color: #333;">❌ Terjadi kesalahan saat mengirim pengaduan</p></div>';
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+            });
+            return;
+        }
+    }
 
-    })
+    // Handle mode pertanyaan
+    if (chatbotMode === 'pertanyaan') {
+        let formData = new FormData(); 
 
-    .then(response => response.text())
+        formData.append("action", "chatbot_response"); 
+        formData.append("message", message);
 
-    .then(data => { 
+        chatOutput.innerHTML += '<div class="message-bot loading-bubble"><span></span><span></span><span></span></div>';
+        chatOutput.scrollTop = chatOutput.scrollHeight;
 
-        let loadingBubble = document.querySelector(".loading-bubble");
-        loadingBubble.remove();
+        fetch("<?php echo admin_url('admin-ajax.php'); ?>", { 
 
-        document.getElementById("chat-output").innerHTML += 
-        "<div class='message-bot'><p>" + data + "</p></div>"; 
+            method: "POST", 
+            body: formData 
 
-        document.getElementById("chat-output").scrollTop = document.getElementById("chat-output").scrollHeight;
+        })
 
-    });
+        .then(response => response.text())
+
+        .then(data => { 
+
+            let loadingBubble = document.querySelector(".loading-bubble");
+            if (loadingBubble) loadingBubble.remove();
+
+            chatOutput.innerHTML += '<div class="message-bot"><p>' + data + '</p></div>'; 
+
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+
+        });
+    }
+}
+
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 </script>
@@ -575,6 +874,16 @@ function chatbot_style() {
         opacity: 1;
         transform: scale(1);
     }
+}
+
+/* Mode selection buttons */
+#chat-output button {
+    transition: all 0.3s ease;
+}
+
+#chat-output button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>
 
