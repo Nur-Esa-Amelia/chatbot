@@ -90,7 +90,7 @@ function chatbot_pengaduan_page() {
         
         // Kirim email ke pelapor
         $subject = 'Balasan Pengaduan Anda - Diskominfo';
-        $message = "Halo,\n\nTerimakasih telah melaporkan keluhan kepada kami. Berikut adalah tanggapan kami:\n\n" . $jawaban . "\n\nTerima kasih telah menjadi bagian dari komunitas kami.\n\nBest Regards,\nDiskominfo";
+        $message = "Halo,\n\nTerimakasih telah melaporkan keluhan kepada Cami. Berikut adalah tanggapan Cami:\n\n" . $jawaban . "\n\nTerima kasih telah menjadi bagian dari komunitas Cami.\n\nBest Regards,\nDiskominfo";
         wp_mail($email, $subject, $message);
         
         echo '<div class="notice notice-success"><p>Pengaduan berhasil diperbarui dan email telah dikirim ke pelapor!</p></div>';
@@ -494,22 +494,60 @@ function selectMode(mode) {
     chatbotMode = mode;
     const chatOutput = document.getElementById("chat-output");
     
+    const backButtonHTML = `<div style="margin-bottom: 10px;">
+        <button onclick="backToMenu()" title="Kembali ke Menu" style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; line-height: 1;">←</button>
+    </div>`;
+    
     if (mode === 'pertanyaan') {
         // Mode pertanyaan - tampilkan input biasa
         const chatInput = document.getElementById("chat-input");
         chatInput.style.display = 'block';
         chatInput.placeholder = 'Tulis pertanyaan Anda...';
-        chatOutput.innerHTML = '<div class="message-bot"><p>Silakan tanyakan apa yang ingin Anda ketahui tentang informasi kami!</p></div>';
+        chatOutput.innerHTML = backButtonHTML + '<div class="message-bot"><p>Silakan tanyakan apa yang ingin Anda ketahui!</p></div>';
     } else if (mode === 'pengaduan') {
         // Mode pengaduan - mulai flow dengan pertanyaan keluhan
         complaintStep = 1;
-        chatOutput.innerHTML = '<div class="message-bot"><p>Kami siap mendengarkan keluhan Anda. Silakan jelaskan masalah atau keluhan Anda secara detail:</p></div>';
+        chatOutput.innerHTML = backButtonHTML + '<div class="message-bot"><p>Cami siap mendengarkan keluhan Anda. Silakan jelaskan masalah atau keluhan Anda secara detail:</p></div>';
         const chatInput = document.getElementById("chat-input");
         chatInput.style.display = 'block';
         chatInput.placeholder = 'Tuliskan keluhan Anda di sini...';
         chatInput.focus();
     }
     
+    chatOutput.scrollTop = chatOutput.scrollHeight;
+}
+
+function backToMenu() {
+    chatbotMode = null;
+    complaintStep = 0;
+    complaintData = {
+        keluhan: '',
+        email: ''
+    };
+    
+    const chatOutput = document.getElementById("chat-output");
+    const chatInput = document.getElementById("chat-input");
+    
+    chatOutput.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; padding: 30px 20px; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+                <h3 style="font-size: 24px; font-weight: 600; margin: 0; color: #333; text-align: center;">Halo</h3>
+                <svg width="32" height="32" viewBox="0 0 365.419 365.419" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: inline-block;">
+                    <defs>
+                        <style>.a{fill:#fce0cd;}.b{fill:#211916;}.c{fill:#f5e06c;}</style>
+                    </defs>
+                    <path class="a" d="M74.947,349.208c1.495-6.049,2.887-12.2,2.787-18.429s-.887-12.807-4.988-17.5a73.742,73.742,0,0,1-11.879-13.1c-11.617-16.688-14.306-37.983-17.782-57.759-2.884-9.56-8.346-42.75-17.59-64.039-6.08-12.552-10.219-25.122-11.509-38.8-.5-5.307.8-11.581,5.312-14.411,2.584-1.619,9.449-2.465,12.33-1.468a36.628,36.628,0,0,1,9.39,5.771c11.81,9.95,16.555,20.717,20.388,35.53,1.479,4.827,8.5,19.762,15.173,31.416,5.78-2.452,11.53-8.939,14.7-13.9,1.461-5.92,10.2-27.839,11.064-34.134,4.218-20.184,5.655-29.424,8.17-48.619,1.914-14.611,5.019-35.8,7.184-47.437.646-11.41,4.718-31.226,6.8-35.26s5.735-7.38,10.275-7.51c7.655-.219,11.676,3.873,15.123,9.848,3.743,6.491,3.279,22.26.581,37.629-.67,16.283-3.626,34.382-4.927,44.969-1.531,15.852-2.826,32.143-3.717,50.008-.026,5.239,14.725,6.289,16.936,3.122,3.114-9.937,12.532-40.86,16.193-52.883,2.289-11.375,13.324-50.3,15.945-59.206,3.4-11.539,5.455-22.815,11.916-33.416,4.871-7.994,15.515-7.988,18.933-6.4s6.7,6.822,7.517,10.755c2.267,10.8-4.995,33.429-6.269,38.436-.118.466-8.812,39.339-13.324,55.164-4.342,19.622-8.408,39.171-12.673,59.2.711,4,9.866,8.534,15.045,5.782,6.578-6.064,19.222-29.289,23.319-37.936,5.83-13.417,15.46-32.151,19.742-42.057l16.812-33.091c2.573-5.064,5.91-10.744,12.047-10.8A10.382,10.382,0,0,1,291.71,52.3c4.043,4.533,4.5,10.65,4.131,16.417-.654,10.287-5.143,24.354-9.853,33.523-3.292,8.443-15.911,37.689-20.566,46.036-2.376,7.755-14.9,34.389-17.026,39.158-2.159,4.98.787,10.294,3.253,11.6,2.608,1.381,5.407,2.712,7.413.526a377.735,377.735,0,0,1,30.749-22.386c5.337-4.822,12.348-10.766,18.133-15.022,7-6.967,16.533-14.044,24.761-14.364a13.28,13.28,0,0,1,5,.595,7.968,7.968,0,0,1,4.054,5.269c1.092,3.975.024,8.3-2,11.884s-4.948,6.577-7.834,9.521c-3.328,3.394-7.876,8.843-11.2,12.237l-23.8,23.679A239.252,239.252,0,0,1,269.943,236.8c-2.281,1.865-4.595,3.688-6.91,5.511-3.926,3.093-8.251,12.3-14.422,23.536-5.688,15.64-28.45,56.844-35.812,65.508-5.131,6.037-14.986,13.716-20.931,18.954a41.779,41.779,0,0,0-1.063,12.8"></path>
+                </svg>
+            </div>
+            <p style="font-size: 14px; color: #666; margin: 0; text-align: center;">Ada yang bisa Cami bantu?</p>
+            <div style="display: flex; gap: 10px; margin-top: 10px; width: 100%;">
+                <button onclick="selectMode('pertanyaan')" style="flex: 1; padding: 10px; background: #0073aa; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">❓ Pertanyaan</button>
+                <button onclick="selectMode('pengaduan')" style="flex: 1; padding: 10px; background: #ff6b6b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">📢 Pengaduan</button>
+            </div>
+        </div>
+    `;
+    
+    chatInput.placeholder = 'Tulis pesan...';
     chatOutput.scrollTop = chatOutput.scrollHeight;
 }
 
@@ -535,7 +573,7 @@ function sendMessage() {
             complaintStep = 2;
             
             // Tampilkan pertanyaan kedua - email
-            chatOutput.innerHTML += '<div class="message-bot"><p>Terima kasih. Sekarang silakan masukkan email Anda agar kami bisa menghubungi Anda kembali:</p></div>';
+            chatOutput.innerHTML += '<div class="message-bot"><p>Terima kasih. Sekarang silakan masukkan email Anda agar Cami bisa menghubungi Anda kembali:</p></div>';
             document.getElementById("chat-input").placeholder = 'Masukkan email Anda...';
             chatOutput.scrollTop = chatOutput.scrollHeight;
             return;
@@ -563,10 +601,15 @@ function sendMessage() {
                 if (loadingBubble) loadingBubble.remove();
 
                 if (data.success) {
-                    chatOutput.innerHTML += '<div class="message-bot"><p style="background: #90EE90; color: #333;">' + data.data + '</p></div>';
+                    chatOutput.innerHTML += '<div class="message-bot"><p style="background: #90EE90; color: #333;">✅ ' + data.data + '</p></div>';
                 } else {
                     chatOutput.innerHTML += '<div class="message-bot"><p style="background: #FFB6C6; color: #333;">❌ ' + data.data + '</p></div>';
                 }
+                
+                // Tambahkan tombol back
+                chatOutput.innerHTML += `<div style="margin-top: 10px;">
+                    <button onclick="backToMenu()" title="Kembali ke Menu" style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; line-height: 1;">←</button>
+                </div>`;
                 
                 complaintStep = 0;
                 chatbotMode = null;
@@ -577,6 +620,9 @@ function sendMessage() {
                 let loadingBubble = document.querySelector(".loading-bubble");
                 if (loadingBubble) loadingBubble.remove();
                 chatOutput.innerHTML += '<div class="message-bot"><p style="background: #FFB6C6; color: #333;">❌ Terjadi kesalahan saat mengirim pengaduan</p></div>';
+                chatOutput.innerHTML += `<div style="margin-top: 10px;">
+                    <button onclick="backToMenu()" title="Kembali ke Menu" style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; line-height: 1;">←</button>
+                </div>`;
                 chatOutput.scrollTop = chatOutput.scrollHeight;
             });
             return;
@@ -884,6 +930,17 @@ function chatbot_style() {
 #chat-output button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Back button styling */
+#chat-output button[onclick*="backToMenu"] {
+    background: hsl(204, 37%, 85%) !important;
+    color: white !important;
+}
+
+#chat-output button[onclick*="backToMenu"]:hover {
+    background: #87CEEB !important;
+    color: white !important;
 }
 </style>
 

@@ -48,16 +48,19 @@ Plugin chatbot telah diupdate dengan 2 fitur utama:
 2. Pilih salah satu dari 2 opsi:
    - **❓ Pertanyaan**: Tanya apapun tentang informasi di website
    - **📢 Pengaduan**: Laporkan keluhan atau masalah
+3. **Tombol Panah "←"** tersedia di setiap saat untuk kembali ke menu awal dan memilih opsi lain
 
 #### Flow Pertanyaan
 - Ketik pertanyaan anda
 - Chatbot akan mencari jawaban otomatis dari database
+- Klik tombol panah "←" untuk kembali ke menu awal
 
 #### Flow Pengaduan
 1. Klik tombol "📢 Pengaduan"
 2. Ketik keluhan/masalah anda secara detail
 3. Ketik email anda (untuk dihubungi kembali)
 4. Pengaduan akan terkirim ke admin
+5. Klik tombol panah "←" untuk kembali ke menu awal
 
 ### Untuk Admin (Backend)
 1. Login ke WordPress Admin Panel
@@ -152,15 +155,22 @@ Developers bisa menggunakan filter/hook berikut:
 
 ## 📝 Changelog
 
-### v2.0 (Current)
+### v2.2 (Current)
+- ✅ Ubah tombol back menjadi hanya panah kecil "←" tanpa teks
+- ✅ Styling lebih minimalis dan kompak
+- ✅ Tooltip "Kembali ke Menu" saat hover
+
+### v2.1
+- ✅ Tambah tombol "← Kembali ke Menu" untuk kembali ke opsi awal
+- ✅ Tombol back tersedia di saat memilih mode dan setelah submit pengaduan
+- ✅ Reset state chatbot ketika klik back
+
+### v2.0
 - ✅ Tambah Mode Pengaduan dengan flow 2 pertanyaan
 - ✅ Buat tabel `wp_pengaduan` untuk menyimpan pengaduan
 - ✅ Admin panel untuk kelola pengaduan
 - ✅ Email notification ke pelapor saat admin mengirim jawaban
 - ✅ Status tracking (pending/selesai)
-
-### v1.0 (Previous)
-- FAQ searching berdasarkan keyword
 
 ---
 
