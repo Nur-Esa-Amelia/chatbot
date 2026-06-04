@@ -466,6 +466,7 @@ function toggleChat() {
         // Tampilkan greeting message dan 2 pilihan saat pertama kali dibuka
         if(chatboxFirstTime) {
             const chatOutput = document.getElementById("chat-output");
+            document.getElementById("chatbot-input-area").style.display = "none";
             chatOutput.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; padding: 30px 20px; gap: 15px;">
                     <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
@@ -493,9 +494,8 @@ function toggleChat() {
 
 function selectMode(mode) {
     chatbotMode = mode;
-    const chatOutput = document.getElementById("chat-output");
-    
-    const backButtonHTML = `<div style="margin-bottom: 10px;">
+    const chatOutput = document.getElementById("chat-output");    document.getElementById("chatbot-input-area").style.display = "flex";    
+    const backButtonHTML = `<div style="position: sticky; top: 0; margin-bottom: 10px; z-index: 10;">
         <button onclick="backToMenu()" title="Kembali ke Menu" style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; line-height: 1;">←</button>
     </div>`;
     
@@ -528,6 +528,8 @@ function backToMenu() {
     
     const chatOutput = document.getElementById("chat-output");
     const chatInput = document.getElementById("chat-input");
+    
+    document.getElementById("chatbot-input-area").style.display = "none";
     
     chatOutput.innerHTML = `
         <div style="display: flex; flex-direction: column; align-items: center; padding: 30px 20px; gap: 15px;">
@@ -580,6 +582,15 @@ function sendMessage() {
             chatOutput.scrollTop = chatOutput.scrollHeight;
             return;
         } else if (complaintStep === 2) {
+            // Validasi email di frontend
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(message)) {
+                chatOutput.innerHTML += '<div class="message-bot"><p style="background: #FFB6C6; color: #333;">❌ Email tidak valid. Silakan masukkan email yang benar (contoh: nama@gmail.com):</p></div>';
+                document.getElementById("chat-input").value = "";
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+                return;
+            }
+            
             // Simpan email dan kirim pengaduan
             complaintData.email = message;
             
@@ -608,11 +619,6 @@ function sendMessage() {
                     chatOutput.innerHTML += '<div class="message-bot"><p style="background: #FFB6C6; color: #333;">❌ ' + data.data + '</p></div>';
                 }
                 
-                // Tambahkan tombol back
-                chatOutput.innerHTML += `<div style="margin-top: 10px;">
-                    <button onclick="backToMenu()" title="Kembali ke Menu" style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; line-height: 1;">←</button>
-                </div>`;
-                
                 complaintStep = 0;
                 chatbotMode = null;
                 document.getElementById("chat-input").placeholder = 'Tulis pesan...';
@@ -622,9 +628,6 @@ function sendMessage() {
                 let loadingBubble = document.querySelector(".loading-bubble");
                 if (loadingBubble) loadingBubble.remove();
                 chatOutput.innerHTML += '<div class="message-bot"><p style="background: #FFB6C6; color: #333;">❌ Terjadi kesalahan saat mengirim pengaduan</p></div>';
-                chatOutput.innerHTML += `<div style="margin-top: 10px;">
-                    <button onclick="backToMenu()" title="Kembali ke Menu" style="padding: 4px 8px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; line-height: 1;">←</button>
-                </div>`;
                 chatOutput.scrollTop = chatOutput.scrollHeight;
             });
             return;
